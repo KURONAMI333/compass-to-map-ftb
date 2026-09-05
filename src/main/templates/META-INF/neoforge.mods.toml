@@ -1,0 +1,57 @@
+# Compass to Map: FTB Chunks — mods.toml
+# client 単独 MOD。ネットワーク登録も Mixin も持たない（SPEC §6 / §7 D1）。
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="KURONAMI"
+description='''
+${mod_description}
+'''
+
+# ─────────────────────────────────────────────────
+# 依存
+# ─────────────────────────────────────────────────
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="[21.1,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+# FTB Chunks: waypoint 登録先。client API のみ使うのでサーバには不要。
+# 下限 2101.1.10 は javap で確認済み（addWaypointAt / getAllWaypoints / Waypoint.setColor）。
+[[dependencies.${mod_id}]]
+    modId="ftbchunks"
+    type="required"
+    versionRange="${ftb_chunks_version_range}"
+    ordering="AFTER"
+    side="CLIENT"
+
+# Explorer's Compass: 構造物検出のホスト（片方だけの構成でも動く）
+[[dependencies.${mod_id}]]
+    modId="explorerscompass"
+    type="optional"
+    versionRange="[0,)"
+    ordering="AFTER"
+    side="CLIENT"
+
+# Nature's Compass: バイオーム検出のホスト（同上）
+[[dependencies.${mod_id}]]
+    modId="naturescompass"
+    type="optional"
+    versionRange="[0,)"
+    ordering="AFTER"
+    side="CLIENT"

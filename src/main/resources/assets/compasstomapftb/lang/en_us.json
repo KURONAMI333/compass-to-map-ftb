@@ -1,0 +1,13 @@
+{
+  "itemGroup.compasstomapftb": "CompassToMapFtb Tab",
+  "block.compasstomapftb.example_block": "Example Block",
+  "item.compasstomapftb.example_item": "Example Item",
+
+  "compasstomapftb.configuration.title": "CompassToMapFtb Configs",
+  "compasstomapftb.configuration.section.compasstomapftb.common.toml": "CompassToMapFtb Configs",
+  "compasstomapftb.configuration.section.compasstomapftb.common.toml.title": "CompassToMapFtb Configs",
+  "compasstomapftb.configuration.items": "Item List",
+  "compasstomapftb.configuration.logDirtBlock": "Log Dirt Block",
+  "compasstomapftb.configuration.magicNumberIntroduction": "Magic Number Text",
+  "compasstomapftb.configuration.magicNumber": "Magic Number"
+}
