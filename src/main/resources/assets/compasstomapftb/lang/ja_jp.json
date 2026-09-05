@@ -1,0 +1,7 @@
+{
+  "message.compasstomapftb.added": "ウェイポイントを追加: %s (%s, %s)",
+
+  "compasstomapftb.config.structures": "Explorer's Compass が構造物を見つけたらウェイポイントを追加する",
+  "compasstomapftb.config.biomes": "Nature's Compass がバイオームを見つけたらウェイポイントを追加する",
+  "compasstomapftb.config.chatNotification": "ウェイポイントを追加した時にチャットへ1行出す"
+}

@@ -1,13 +1,7 @@
 {
-  "itemGroup.compasstomapftb": "CompassToMapFtb Tab",
-  "block.compasstomapftb.example_block": "Example Block",
-  "item.compasstomapftb.example_item": "Example Item",
+  "message.compasstomapftb.added": "Waypoint added: %s (%s, %s)",
 
-  "compasstomapftb.configuration.title": "CompassToMapFtb Configs",
-  "compasstomapftb.configuration.section.compasstomapftb.common.toml": "CompassToMapFtb Configs",
-  "compasstomapftb.configuration.section.compasstomapftb.common.toml.title": "CompassToMapFtb Configs",
-  "compasstomapftb.configuration.items": "Item List",
-  "compasstomapftb.configuration.logDirtBlock": "Log Dirt Block",
-  "compasstomapftb.configuration.magicNumberIntroduction": "Magic Number Text",
-  "compasstomapftb.configuration.magicNumber": "Magic Number"
+  "compasstomapftb.config.structures": "Add a waypoint when Explorer's Compass finds a structure",
+  "compasstomapftb.config.biomes": "Add a waypoint when Nature's Compass finds a biome",
+  "compasstomapftb.config.chatNotification": "Show a chat line when a waypoint is added"
 }

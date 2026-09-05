@@ -49,6 +49,13 @@ neoForge {
             programArgument '--nogui'
         }
 
+        // G1 / A8 検証用: 起動と同時に localhost の専用サーバーへ繋ぐクライアント
+        clientMp {
+            client()
+            programArgument '--quickPlayMultiplayer'
+            programArgument 'localhost'
+        }
+
         configureEach {
             logLevel = org.slf4j.event.Level.DEBUG
         }
