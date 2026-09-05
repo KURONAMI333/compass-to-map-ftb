@@ -21,8 +21,12 @@ public final class G1Spike {
 
     private G1Spike() {}
 
+    /** dev run でのみ true。ゲート検証が済んだらこのクラスごと消す。 */
+    private static final boolean ENABLED = Boolean.getBoolean("compasstomapftb.g1spike");
+
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
+        if (!ENABLED) return;
         if (++tick % 20 != 0) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;

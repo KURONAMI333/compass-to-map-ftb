@@ -22,8 +22,16 @@ public final class G1SpikeServer {
 
     private G1SpikeServer() {}
 
+    /**
+     * dev run でのみ true。**このゲートが無いと、専用サーバーに入れた時に全プレイヤーへ
+     * コンパスを配ってしまう**（{@code @EventBusSubscriber} は dist 未指定だと
+     * CLIENT と DEDICATED_SERVER の両方に登録される）。ゲート検証が済んだらこのクラスごと消す。
+     */
+    private static final boolean ENABLED = Boolean.getBoolean("compasstomapftb.g1spike");
+
     @SubscribeEvent
     public static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (!ENABLED) return;
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         giveNc(player);
         giveEc(player);

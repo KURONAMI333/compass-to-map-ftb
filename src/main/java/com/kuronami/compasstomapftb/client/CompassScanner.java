@@ -10,6 +10,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
@@ -36,11 +37,27 @@ public final class CompassScanner {
 
     private static int tick = 0;
 
+    /**
+     * EC / NC が導入されているか。**未導入を例外で検出しない**ための門番。
+     *
+     * <p>Inner class の隔離だけでも落ちはしないが、それだと「EC を入れていないだけ」の
+     * 正規の構成（SPEC F3）でも NoClassDefFoundError の warn が log に出てしまう。
+     * C2M（mod-003）の {@code CompassWatcher:74,86} と同じく先に {@link ModList} で弾く。
+     * Inner class の catch は残す（導入されているが API が変わった場合の受け皿）。
+     */
+    private static final boolean EC_LOADED = ModList.get().isLoaded("explorerscompass");
+    private static final boolean NC_LOADED = ModList.get().isLoaded("naturescompass");
+
     private CompassScanner() {}
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         tick++;
+
+        Minecraft mc = Minecraft.getInstance();
+        // タイトル画面では保留キューも回さない（ワールドに居ないので manager は取れず、
+        // 空振りのリトライで保留が寿命を削られるだけになる）。
+        if (mc.player == null) return;
 
         // 保留キューの再試行（ログイン直後の MapManager 初期化待ちを拾う）。
         if (tick % SINK_TICK_INTERVAL_TICKS == 0) {
@@ -48,9 +65,6 @@ public final class CompassScanner {
         }
 
         if (tick % SCAN_INTERVAL_TICKS != 0) return;
-
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) return;
 
         Level level = mc.player.level();
         ResourceKey<Level> dimension = level.dimension();
@@ -66,8 +80,8 @@ public final class CompassScanner {
 
             // C2M は最初の1本で打ち切るが、本作は2本同時 FOUND を取りこぼさないため
             // break せずに全スロットを見続ける。
-            ECInner.tryHandle(stack, level, dimension);
-            NCInner.tryHandle(stack, level, dimension);
+            if (EC_LOADED) ECInner.tryHandle(stack, level, dimension);
+            if (NC_LOADED) NCInner.tryHandle(stack, level, dimension);
         }
     }
 

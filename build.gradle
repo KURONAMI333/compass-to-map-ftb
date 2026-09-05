@@ -58,6 +58,8 @@ neoForge {
 
         configureEach {
             logLevel = org.slf4j.event.Level.DEBUG
+            // G1 ゲート検証用のスパイクを有効にする（dev run 限定。出荷 jar では不活性）
+            systemProperty 'compasstomapftb.g1spike', 'true'
         }
     }
 

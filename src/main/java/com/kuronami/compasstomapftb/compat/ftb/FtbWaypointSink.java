@@ -4,6 +4,7 @@ import com.kuronami.compasstomapftb.CompassToMapFtb;
 import com.kuronami.compasstomapftb.client.CompassNames;
 import com.kuronami.compasstomapftb.client.Discovery;
 import com.kuronami.compasstomapftb.client.Notifier;
+import com.kuronami.compasstomapftb.client.SeenKeys;
 import dev.ftb.mods.ftbchunks.api.FTBChunksAPI;
 import dev.ftb.mods.ftbchunks.api.client.waypoint.Waypoint;
 import dev.ftb.mods.ftbchunks.api.client.waypoint.WaypointManager;
@@ -42,6 +43,8 @@ public final class FtbWaypointSink {
             }
         } catch (Throwable t) {
             CompassToMapFtb.LOGGER.warn("FTB Chunks waypoint manager lookup failed: {}", t.toString());
+            enqueue(d, y).warned = true;
+            return;
         }
         enqueue(d, y);
     }
@@ -57,8 +60,7 @@ public final class FtbWaypointSink {
 
             p.ageTicks += 20;
             if (p.ageTicks > MAX_PENDING_TICKS) {
-                CompassToMapFtb.LOGGER.warn(
-                        "FTB Chunks waypoint pending timed out, dropping: {}", p.discovery.id());
+                drop(p, "timed out waiting for the FTB Chunks waypoint manager");
                 continue;
             }
 
@@ -70,7 +72,10 @@ public final class FtbWaypointSink {
                     PENDING.addLast(p);
                 }
             } catch (Throwable t) {
-                CompassToMapFtb.LOGGER.warn("FTB Chunks waypoint manager lookup failed: {}", t.toString());
+                if (!p.warned) {
+                    p.warned = true;
+                    CompassToMapFtb.LOGGER.warn("FTB Chunks waypoint manager lookup failed: {}", t.toString());
+                }
                 PENDING.addLast(p);
             }
         }
@@ -81,15 +86,30 @@ public final class FtbWaypointSink {
         PENDING.clear();
     }
 
-    private static void enqueue(Discovery d, int y) {
+    private static Pending enqueue(Discovery d, int y) {
         if (PENDING.size() >= MAX_PENDING_SIZE) {
             Pending dropped = PENDING.pollFirst();
             if (dropped != null) {
-                CompassToMapFtb.LOGGER.warn(
-                        "FTB Chunks waypoint pending queue full, dropping oldest: {}", dropped.discovery.id());
+                drop(dropped, "pending queue full");
             }
         }
-        PENDING.addLast(new Pending(d, y));
+        Pending p = new Pending(d, y);
+        PENDING.addLast(p);
+        return p;
+    }
+
+    /**
+     * 保留を捨てる。**捨てたら SeenKeys の記録も取り消す。**
+     *
+     * <p>取り消さないと、コンパスが FOUND のまま手元にあっても検出層が
+     * 「もう見た key だ」と弾き続け、そのセッション中は二度と登録されない。
+     * 取り消しておけば、次の走査で同じ発見がもう一度登録を試みる。
+     */
+    private static void drop(Pending p, String reason) {
+        SeenKeys.remove(p.discovery.key());
+        CompassToMapFtb.LOGGER.warn("Dropped waypoint for {} at ({}, {}) in {}: {}",
+                p.discovery.id(), p.discovery.x(), p.discovery.z(),
+                p.discovery.dimension().location(), reason);
     }
 
     private static void register(WaypointManager mgr, Discovery d, int y) {
@@ -99,6 +119,10 @@ public final class FtbWaypointSink {
             if (exists) return;
 
             String name = CompassNames.prettify(d.id());
+            // addWaypointAt は「追加できたか」を返さない。内部で HashSet#add に渡した後、
+            // 挿入の成否に関わらず新しく作った WaypointImpl をそのまま返す
+            // (WaypointManagerImpl:155-159)。だから非 null は登録された証拠にならず、
+            // 重複の判定は上の x/z 照合だけが担っている。
             Waypoint wp = mgr.addWaypointAt(new BlockPos(d.x(), y, d.z()), name);
             if (wp == null) return;
             wp.setColor(WaypointColors.forDiscovery(d));
@@ -112,6 +136,8 @@ public final class FtbWaypointSink {
         final Discovery discovery;
         final int y;
         int ageTicks;
+        /** この保留について既に warn を出したか（同じ失敗を毎リトライ出さない）。 */
+        boolean warned;
 
         Pending(Discovery discovery, int y) {
             this.discovery = discovery;

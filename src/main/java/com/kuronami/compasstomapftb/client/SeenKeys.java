@@ -34,6 +34,17 @@ public final class SeenKeys {
         return true;
     }
 
+    /**
+     * 記録を取り消す。登録に失敗して発見を捨てた時に呼ぶ。
+     *
+     * <p>これが無いと、保留キューのタイムアウトで捨てられた発見の key が残り続け、
+     * コンパスが FOUND のまま手元にあってもそのセッション中は二度と登録されない
+     * （症状が「何も起きない」なので、利用者からは原因の分からない不具合に見える）。
+     */
+    public static synchronized void remove(String key) {
+        SEEN.remove(key);
+    }
+
     /** ログアウト時に全部忘れる。 */
     public static synchronized void clear() {
         SEEN.clear();
