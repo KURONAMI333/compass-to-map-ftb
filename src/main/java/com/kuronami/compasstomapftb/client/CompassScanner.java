@@ -65,8 +65,7 @@ public final class CompassScanner {
      * ログイン時点で既に FOUND だった発見の key。**登録しないが、{@code SeenKeys} には入れない。**
      *
      * <p>`SeenKeys` に入れてしまうと、そのセッション中ずっとその対象を登録できなくなる。
-     * 実害: 利用者がピンを削除して入り直し、同じ対象を再検索しても**何も起きない**
-     * （SPEC §8 は「削除済みなら復活する」と決めている）。前セッションで config を off に
+     * 実害: 利用者がピンを削除して入り直し、同じ対象を再検索しても**何も起きない**。前セッションで config を off に
      * していて今セッションで on にした場合も同じく永久に登録されない。
      *
      * <p>代わりにここへ入れ、**そのコンパスが FOUND から外れた時点で解除する**。
@@ -81,13 +80,13 @@ public final class CompassScanner {
      * EC / NC が導入されているか。**未導入を例外で検出しない**ための門番。
      *
      * <p>Inner class の隔離だけでも落ちはしないが、それだと「EC を入れていないだけ」の
-     * 正規の構成（SPEC F3）でも NoClassDefFoundError の warn が log に出てしまう。
+     * 正規の構成（片方だけ導入）でも NoClassDefFoundError の warn が log に出てしまう。
      * C2M（mod-003）の {@code CompassWatcher:74,86} と同じく先に {@link ModList} で弾く。
      * Inner class の catch は残す（導入されているが API が変わった場合の受け皿）。
      *
      * <p><b>static final で持たない。</b> {@code @EventBusSubscriber} のクラスがいつロードされるかは
      * 同居する MOD の顔ぶれで変わり、{@link ModList} が揃う前にロードされると false のまま固まる。
-     * 実際に JourneyMap と C2M を同居させた構成で検出が丸ごと止まった（2026-09-06 実測・受入 A9）。
+     * 実際に JourneyMap を同居させた構成で検出が丸ごと止まった（2026-09-06 実測）。
      * 最初の走査（＝ワールドに入った後）で1回だけ解決する。
      */
     private static Boolean ecLoaded;
@@ -105,7 +104,7 @@ public final class CompassScanner {
             ecLoaded = ec;
             ncLoaded = nc;
         } catch (Throwable t) {
-            // 無言で諦めない。ここが黙ると ddb00b6 で直したのと同じ「何も起きない」症状になる。
+            // 無言で諦めない。ここが黙ると「何も起きない」症状になり、原因に辿り着けなくなる。
             if (++resolveFailures == 100) {
                 CompassToMapFtb.LOGGER.warn(
                         "Could not determine whether Explorer's/Nature's Compass are installed"

@@ -40,7 +40,7 @@ public final class FtbWaypointSink {
      * 次の走査がまた登録を試み、また保留になり、また破棄される。これは
      * 「あとで manager が取れるようになったら拾う」ための正しいリトライだが、
      * warn まで毎回出すと**サーバーに FTB Chunks が無い構成でログが延々と流れる**
-     * （SPEC §7 D0 のとおり、その構成では WaypointManager は永久に空）。
+     * （サーバーに FTB Chunks が無い構成では WaypointManager は永久に空になる）。
      */
     private static final Set<String> WARNED_DROPS = new HashSet<>();
 
