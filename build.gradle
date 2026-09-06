@@ -49,11 +49,12 @@ neoForge {
             programArgument '--nogui'
         }
 
-        // G1 / A8 検証用: 起動と同時に localhost の専用サーバーへ繋ぐクライアント
+        // A8 検証用: 起動と同時に専用サーバーへ繋ぐクライアント。
+        // 接続先は -PmpAddress=host:port で差し替えられる（既定は同プロジェクトの runServer）。
         clientMp {
             client()
             programArgument '--quickPlayMultiplayer'
-            programArgument 'localhost'
+            programArgument project.findProperty('mpAddress') ?: 'localhost'
         }
 
         configureEach {
