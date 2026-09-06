@@ -25,9 +25,9 @@ import java.util.Set;
  *
  * <p>EC / NC はどちらも optional 依存。API 不一致・クラス不在で本体クラスのロード自体が
  * 巻き込まれないよう、各 MOD への参照は {@link ECInner} / {@link NCInner} に閉じ込める
- * （C2M（mod-003）の {@code CompassWatcher} の ECInner / NCInner と同じ形。この2クラスの
- * 実データが実際に読めることは、同じ手法の {@code G1Spike}／{@code ECProbe}／{@code NCProbe}
- * で先に確認済み）。
+ * （C2M（mod-003）の {@code CompassWatcher} の ECInner / NCInner と同じ形）。
+ * クライアント側でこの component が実際に読めることは、専用サーバー越しの実測で確認済み
+ * （2026-09-06。サーバーが書いた値をクライアントが別プロセスから読めた）。
  */
 @EventBusSubscriber(modid = CompassToMapFtb.MODID, value = Dist.CLIENT)
 public final class CompassScanner {
