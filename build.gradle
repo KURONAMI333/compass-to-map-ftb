@@ -91,8 +91,12 @@ dependencies {
     localRuntime "dev.ftb.mods:ftb-chunks-neoforge:${ftb_chunks_version}"
     localRuntime "dev.ftb.mods:ftb-library-neoforge:${ftb_library_version}"
     localRuntime "dev.ftb.mods:ftb-teams-neoforge:${ftb_teams_version}"
-    localRuntime "maven.modrinth:explorers-compass:${ec_version}"
-    localRuntime "maven.modrinth:natures-compass:${nc_version}"
+    // EC / NC は optional 依存。片方だけ / 両方無しの構成で起動できることを確かめるため、
+    // dev runtime から外せるようにしてある（受入 A3）。compileOnly は常に要る。
+    //   ./gradlew runClientMp -PnoEC   … Explorer's Compass を入れずに起動
+    //   ./gradlew runClientMp -PnoNC   … Nature's Compass を入れずに起動
+    if (!project.hasProperty('noEC')) localRuntime "maven.modrinth:explorers-compass:${ec_version}"
+    if (!project.hasProperty('noNC')) localRuntime "maven.modrinth:natures-compass:${nc_version}"
 
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
