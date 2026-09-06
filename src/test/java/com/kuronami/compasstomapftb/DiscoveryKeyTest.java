@@ -3,21 +3,21 @@ package com.kuronami.compasstomapftb;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
+import com.kuronami.compasstomapftb.client.SeenKeys;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * {@code Discovery#key()} の種別ごとの座標の扱いを、Minecraft のクラスに触れずに検証する。
+ * 重複判定の key の組み立て規則を検証する。
  *
- * <p>{@code Discovery} は {@code ResourceKey<Level>} を持つので、そのままでは JUnit から
- * 組み立てられない。key の組み立て規則だけを同じ形で書き写して検証する
- * （規則を変えたらこのテストも落ちるように、期待値は文字列で直書きする）。
+ * <p>{@code Discovery} は {@code ResourceKey<Level>} を持つので JUnit からは組み立てられない。
+ * 規則の実体は {@link SeenKeys#keyOf} にあり、{@code Discovery#key()} はそれを呼ぶだけなので、
+ * **このテストは本番コードを直接叩いている**（規則を変えればここが落ちる）。
  */
 class DiscoveryKeyTest {
 
     private static String key(String kind, String id, int x, int z) {
-        String base = kind + "|" + id;
-        return "STRUCTURE".equals(kind) ? base + "|" + x + "|" + z : base;
+        return SeenKeys.keyOf(kind, id, x, z);
     }
 
     @Test

@@ -32,7 +32,9 @@ ${mod_description}
     side="BOTH"
 
 # FTB Chunks: waypoint 登録先。client API のみ使うのでサーバには不要。
-# 下限 2101.1.10 は javap で確認済み（addWaypointAt / getAllWaypoints / Waypoint.setColor）。
+# 下限 2101.1.10 は javap で確認済み（addWaypointAt / getAllWaypoints /
+# Waypoint.setColor / Waypoint.getPos / Waypoint.getName / clientApi().getWaypointManager(dim)
+# ＝実際に呼んでいる API を全部）。
 [[dependencies.${mod_id}]]
     modId="ftbchunks"
     type="required"

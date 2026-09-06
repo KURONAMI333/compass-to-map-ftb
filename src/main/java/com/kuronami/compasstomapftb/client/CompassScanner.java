@@ -15,6 +15,9 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * コンパスの検出層。クライアント tick からインベントリ（防具・オフハンド込み）を走査し、
  * Nature's Compass / Explorer's Compass が FOUND を返していれば {@link Discovery} を作って
@@ -29,11 +32,19 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 @EventBusSubscriber(modid = CompassToMapFtb.MODID, value = Dist.CLIENT)
 public final class CompassScanner {
 
-    /** インベントリ走査の間隔（tick）。 */
-    private static final int SCAN_INTERVAL_TICKS = 10;
+    /**
+     * インベントリ走査の間隔（tick）。**毎 tick 走査する。**
+     *
+     * <p>単に FOUND を拾うだけなら 10 tick で足りる。毎 tick にしているのは
+     * {@link #STALE_AT_LOGIN} の解除に「コンパスが FOUND から外れた瞬間」を捉える必要があるため。
+     * 間隔を空けると、足元のバイオームを検索した時のように一瞬で終わる検索で
+     * SEARCHING を見逃し、再検索が登録されないまま残る。走査は空スロットの読み飛ばしが
+     * ほとんどなので毎 tick でも軽い。
+     */
+    private static final int SCAN_INTERVAL_TICKS = 1;
 
-    /** ログイン直後に「記録だけして登録しない」走査を何回行うか（10 tick 間隔なので 3 回 = 30 tick）。 */
-    private static final int PRIMING_SCANS = 3;
+    /** ログイン直後に「登録しない」窓の長さ（tick）。1.5 秒。 */
+    private static final int PRIMING_TICKS = 30;
 
     /** {@link FtbWaypointSink#tick()} を呼ぶ間隔（tick）。 */
     private static final int SINK_TICK_INTERVAL_TICKS = 20;
@@ -48,7 +59,23 @@ public final class CompassScanner {
      * インベントリの同期はログイン直後に届くが1 tick 精度で保証されないので、数回ぶんの余裕を取る。
      * この窓（30 tick ＝ 1.5 秒）の間に実際の検索が完了することはない（GUI を開いて対象を選ぶ操作が要る）。
      */
-    private static int primingScans = 0;
+    private static int primingTicksLeft = 0;
+
+    /**
+     * ログイン時点で既に FOUND だった発見の key。**登録しないが、{@code SeenKeys} には入れない。**
+     *
+     * <p>`SeenKeys` に入れてしまうと、そのセッション中ずっとその対象を登録できなくなる。
+     * 実害: 利用者がピンを削除して入り直し、同じ対象を再検索しても**何も起きない**
+     * （SPEC §8 は「削除済みなら復活する」と決めている）。前セッションで config を off に
+     * していて今セッションで on にした場合も同じく永久に登録されない。
+     *
+     * <p>代わりにここへ入れ、**そのコンパスが FOUND から外れた時点で解除する**。
+     * 再検索は必ず SEARCHING を通るので、実際に検索し直せば次の FOUND は登録される。
+     */
+    private static final Set<String> STALE_AT_LOGIN = new HashSet<>();
+
+    /** 今回の走査で FOUND だった key（{@link #STALE_AT_LOGIN} の解除判定に使う）。 */
+    private static final Set<String> FOUND_THIS_SCAN = new HashSet<>();
 
     /**
      * EC / NC が導入されているか。**未導入を例外で検出しない**ための門番。
@@ -66,13 +93,26 @@ public final class CompassScanner {
     private static Boolean ecLoaded;
     private static Boolean ncLoaded;
 
+    /** {@link #compassModsResolved()} が失敗した回数。既定値のまま黙り込まないための計数。 */
+    private static int resolveFailures = 0;
+
     private static boolean compassModsResolved() {
-        if (ecLoaded != null) return true;
+        // 片方だけ代入された状態を「解決済み」と誤判定すると、次の走査で unboxing の NPE になる。
+        if (ecLoaded != null && ncLoaded != null) return true;
         try {
-            ecLoaded = ModList.get().isLoaded("explorerscompass");
-            ncLoaded = ModList.get().isLoaded("naturescompass");
+            boolean ec = ModList.get().isLoaded("explorerscompass");
+            boolean nc = ModList.get().isLoaded("naturescompass");
+            ecLoaded = ec;
+            ncLoaded = nc;
         } catch (Throwable t) {
-            return false; // ModList がまだ使えない。次の走査で試す
+            // 無言で諦めない。ここが黙ると ddb00b6 で直したのと同じ「何も起きない」症状になる。
+            if (++resolveFailures == 100) {
+                CompassToMapFtb.LOGGER.warn(
+                        "Could not determine whether Explorer's/Nature's Compass are installed"
+                                + " after {} tries; compass detection is not running: {}",
+                        resolveFailures, t.toString());
+            }
+            return false;
         }
         CompassToMapFtb.LOGGER.info("Compass detection ready: Explorer's Compass={} / Nature's Compass={}",
                 ecLoaded, ncLoaded);
@@ -106,8 +146,10 @@ public final class CompassScanner {
         // メインインベントリ・防具・オフハンドの全スロットを漏れなく走査できる。
         if (!compassModsResolved()) return;
 
-        boolean priming = primingScans > 0;
-        if (priming) primingScans--;
+        boolean priming = primingTicksLeft > 0;
+        if (priming) primingTicksLeft--;
+
+        FOUND_THIS_SCAN.clear();
 
         Inventory inv = mc.player.getInventory();
         for (int i = 0; i < inv.getContainerSize(); i++) {
@@ -119,18 +161,24 @@ public final class CompassScanner {
             if (ecLoaded) ECInner.tryHandle(stack, level, dimension, priming);
             if (ncLoaded) NCInner.tryHandle(stack, level, dimension, priming);
         }
+
+        // 手元から FOUND が消えた key は「前セッションの持ち越し」ではなくなる。
+        // 再検索は SEARCHING を通るので、ここで解除されて次の FOUND が登録される。
+        if (!STALE_AT_LOGIN.isEmpty()) STALE_AT_LOGIN.retainAll(FOUND_THIS_SCAN);
     }
 
     @SubscribeEvent
     public static void onLoggingIn(ClientPlayerNetworkEvent.LoggingIn event) {
         SeenKeys.clear();
+        STALE_AT_LOGIN.clear();
         FtbWaypointSink.clearPending();
-        primingScans = PRIMING_SCANS;
+        primingTicksLeft = PRIMING_TICKS;
     }
 
     @SubscribeEvent
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
         SeenKeys.clear();
+        STALE_AT_LOGIN.clear();
         FtbWaypointSink.clearPending();
     }
 
@@ -146,10 +194,18 @@ public final class CompassScanner {
         if (!enabled) return;
 
         Discovery d = new Discovery(kind, id, x, z, dimension);
-        if (!SeenKeys.add(d.key())) return;
+        String key = d.key();
+        FOUND_THIS_SCAN.add(key);
 
-        // ログイン時点で既に FOUND だったものは前のセッションの結果。記録だけして登録しない。
-        if (priming) return;
+        // ログイン時点で既に FOUND だったものは前のセッションの結果。登録しない。
+        // SeenKeys には入れない（入れるとセッション中ずっと登録できなくなる）。
+        if (priming) {
+            STALE_AT_LOGIN.add(key);
+            return;
+        }
+        if (STALE_AT_LOGIN.contains(key)) return;
+
+        if (!SeenKeys.add(key)) return;
 
         int y = YEstimator.estimate(level, x, z, id, kind == Discovery.Kind.BIOME);
         FtbWaypointSink.offer(d, y);

@@ -21,6 +21,20 @@ public final class SeenKeys {
     private SeenKeys() {}
 
     /**
+     * 重複判定の key を組み立てる。**種別で座標の扱いが違う**（理由は {@link Discovery#key()}）。
+     *
+     * <p>{@link Discovery} は {@code ResourceKey<Level>} を持つため JUnit から組み立てられない。
+     * 規則そのものはここに置いて Minecraft のクラスに触れない形にし、{@link Discovery#key()} は
+     * これを呼ぶだけにする。**テストはこのメソッドを直接叩く**（規則を変えたらテストが落ちる）。
+     *
+     * @param kind {@link Discovery.Kind} の名前（{@code "STRUCTURE"} / {@code "BIOME"}）
+     */
+    public static String keyOf(String kind, String id, int x, int z) {
+        String base = kind + "|" + id;
+        return "STRUCTURE".equals(kind) ? base + "|" + x + "|" + z : base;
+    }
+
+    /**
      * 初めて見た key なら記録して {@code true} を返す。既に見ていれば {@code false}。
      * 上限 {@value #MAX_SIZE} 件を超えたら、挿入順で最も古いものを1件捨てる。
      */

@@ -12,7 +12,9 @@ import net.minecraft.core.BlockPos;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * 発見（{@link Discovery}）を FTB Chunks の waypoint として登録する層。
@@ -30,6 +32,17 @@ public final class FtbWaypointSink {
     private static final int MAX_PENDING_SIZE = 64;
 
     private static final Deque<Pending> PENDING = new ArrayDeque<>();
+
+    /**
+     * 破棄の warn を出した key。**同じ発見について warn は1回だけ**にする。
+     *
+     * <p>破棄時に {@code SeenKeys} の記録を取り消すので、コンパスが FOUND のままなら
+     * 次の走査がまた登録を試み、また保留になり、また破棄される。これは
+     * 「あとで manager が取れるようになったら拾う」ための正しいリトライだが、
+     * warn まで毎回出すと**サーバーに FTB Chunks が無い構成でログが延々と流れる**
+     * （SPEC §7 D0 のとおり、その構成では WaypointManager は永久に空）。
+     */
+    private static final Set<String> WARNED_DROPS = new HashSet<>();
 
     private FtbWaypointSink() {}
 
@@ -84,6 +97,7 @@ public final class FtbWaypointSink {
     /** ログアウト時に保留を捨てる。 */
     public static void clearPending() {
         PENDING.clear();
+        WARNED_DROPS.clear();
     }
 
     private static Pending enqueue(Discovery d, int y) {
@@ -106,7 +120,9 @@ public final class FtbWaypointSink {
      * 取り消しておけば、次の走査で同じ発見がもう一度登録を試みる。
      */
     private static void drop(Pending p, String reason) {
-        SeenKeys.remove(p.discovery.key());
+        String key = p.discovery.key();
+        SeenKeys.remove(key);
+        if (!WARNED_DROPS.add(key)) return;
         CompassToMapFtb.LOGGER.warn("Dropped waypoint for {} at ({}, {}) in {}: {}",
                 p.discovery.id(), p.discovery.x(), p.discovery.z(),
                 p.discovery.dimension().location(), reason);

@@ -42,7 +42,6 @@ public record Discovery(Kind kind, String id, int x, int z, ResourceKey<Level> d
      * <p>Y はどちらにも含めない（チャンクのロード状況で変わるため）。
      */
     public String key() {
-        String base = kind + "|" + id;
-        return kind == Kind.STRUCTURE ? base + "|" + x + "|" + z : base;
+        return SeenKeys.keyOf(kind.name(), id, x, z);
     }
 }
