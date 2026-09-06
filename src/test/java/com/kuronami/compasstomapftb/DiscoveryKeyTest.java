@@ -15,42 +15,47 @@ import org.junit.jupiter.api.Test;
  */
 class DiscoveryKeyTest {
 
-    private static String key(String dimension, String kind, String id, int x, int z) {
-        String base = dimension + "|" + kind + "|" + id;
+    private static String key(String kind, String id, int x, int z) {
+        String base = kind + "|" + id;
         return "STRUCTURE".equals(kind) ? base + "|" + x + "|" + z : base;
     }
 
     @Test
     @DisplayName("バイオームの key は座標を含まない（検索のたびに座標がぶれるため）")
     void biomeKeyIgnoresCoordinates() {
-        String a = key("minecraft:overworld", "BIOME", "minecraft:bamboo_jungle", 419, -315);
-        String b = key("minecraft:overworld", "BIOME", "minecraft:bamboo_jungle", 410, -277);
+        String a = key("BIOME", "minecraft:bamboo_jungle", 419, -315);
+        String b = key("BIOME", "minecraft:bamboo_jungle", 410, -277);
         assertEquals(a, b, "同じバイオームを再検索して座標がずれても同一の key になること");
-        assertEquals("minecraft:overworld|BIOME|minecraft:bamboo_jungle", a);
+        assertEquals("BIOME|minecraft:bamboo_jungle", a);
     }
 
     @Test
     @DisplayName("構造物の key は座標を含む（別の個体には別のピンを立てる）")
     void structureKeyKeepsCoordinates() {
-        String a = key("minecraft:overworld", "STRUCTURE", "minecraft:village_plains", 890, -432);
-        String b = key("minecraft:overworld", "STRUCTURE", "minecraft:village_plains", 2400, 100);
+        String a = key("STRUCTURE", "minecraft:village_plains", 890, -432);
+        String b = key("STRUCTURE", "minecraft:village_plains", 2400, 100);
         assertNotEquals(a, b, "別の位置の同じ構造物は別扱いになること");
-        assertEquals("minecraft:overworld|STRUCTURE|minecraft:village_plains|890|-432", a);
+        assertEquals("STRUCTURE|minecraft:village_plains|890|-432", a);
     }
 
     @Test
-    @DisplayName("次元が違えば別扱い")
-    void dimensionSeparates() {
-        assertNotEquals(
-                key("minecraft:overworld", "BIOME", "minecraft:desert", 1, 2),
-                key("minecraft:the_nether", "BIOME", "minecraft:desert", 1, 2));
+    @DisplayName("key に次元は入らない（FOUND のコンパスを持って次元を移っても再登録しない）")
+    void dimensionIsNotPartOfKey() {
+        // 同じコンパスをオーバーワールドで観測した時と、ネザーへ持ち込んで観測した時。
+        // 次元が key に入っていると、移動した瞬間にネザーの地図へ他次元の座標が立つ。
+        assertEquals(
+                key("BIOME", "minecraft:beach", 250, 18),
+                key("BIOME", "minecraft:beach", 250, 18));
+        assertEquals(
+                key("STRUCTURE", "minecraft:igloo", -6080, 1056),
+                key("STRUCTURE", "minecraft:igloo", -6080, 1056));
     }
 
     @Test
     @DisplayName("種別が違えば別扱い")
     void kindSeparates() {
         assertNotEquals(
-                key("minecraft:overworld", "BIOME", "minecraft:jungle", 1, 2),
-                key("minecraft:overworld", "STRUCTURE", "minecraft:jungle", 1, 2));
+                key("BIOME", "minecraft:jungle", 1, 2),
+                key("STRUCTURE", "minecraft:jungle", 1, 2));
     }
 }

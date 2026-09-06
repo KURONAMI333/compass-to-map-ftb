@@ -32,10 +32,17 @@ public record Discovery(Kind kind, String id, int x, int z, ResourceKey<Level> d
      * （{@code StructureSearchWorker#succeed}）なので、同じ構造物なら常に同じ座標になる。
      * 座標を含めておけば、別の村を見つけた時にちゃんと別のピンが立つ。
      *
+     * <p><b>次元も含めない。</b> コンパスは「どの次元で検索したか」を持っておらず
+     * （NC / EC のどの component にも次元が無い）、次元を移動しても FOUND のまま残る。
+     * key に次元を入れると、FOUND のコンパスを持ってネザーへ入った瞬間に
+     * <b>オーバーワールドの座標がネザーの地図へ登録される</b>（2026-09-06 実機で発生）。
+     * 登録先の次元は {@code dimension} を使うが、これは「FOUND になったのを観測した時に
+     * プレイヤーが居た次元」であって、判定には使わない。
+     *
      * <p>Y はどちらにも含めない（チャンクのロード状況で変わるため）。
      */
     public String key() {
-        String base = dimension.location() + "|" + kind + "|" + id;
+        String base = kind + "|" + id;
         return kind == Kind.STRUCTURE ? base + "|" + x + "|" + z : base;
     }
 }

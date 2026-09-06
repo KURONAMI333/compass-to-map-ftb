@@ -32,10 +32,23 @@ public final class CompassScanner {
     /** インベントリ走査の間隔（tick）。 */
     private static final int SCAN_INTERVAL_TICKS = 10;
 
+    /** ログイン直後に「記録だけして登録しない」走査を何回行うか（10 tick 間隔なので 3 回 = 30 tick）。 */
+    private static final int PRIMING_SCANS = 3;
+
     /** {@link FtbWaypointSink#tick()} を呼ぶ間隔（tick）。 */
     private static final int SINK_TICK_INTERVAL_TICKS = 20;
 
     private static int tick = 0;
+
+    /**
+     * ログイン直後、既に FOUND のコンパスを「発見済み」として記録するだけで登録しない走査の残り回数。
+     *
+     * <p>コンパスは検索結果を持ち越すので、ログイン時点で FOUND なのは<b>前のセッションの結果</b>で
+     * あって新しい発見ではない。そのまま登録すると、別の次元でログインした時にそこへ他次元の座標が立つ。
+     * インベントリの同期はログイン直後に届くが1 tick 精度で保証されないので、数回ぶんの余裕を取る。
+     * この窓（30 tick ＝ 1.5 秒）の間に実際の検索が完了することはない（GUI を開いて対象を選ぶ操作が要る）。
+     */
+    private static int primingScans = 0;
 
     /**
      * EC / NC が導入されているか。**未導入を例外で検出しない**ための門番。
@@ -73,6 +86,9 @@ public final class CompassScanner {
         // （1.21.1 の net.minecraft.world.entity.player.Inventory を javap で実測確認済み）。
         // C2M（mod-003）のように offhand だけ別扱いで読む必要はなく、この1ループで
         // メインインベントリ・防具・オフハンドの全スロットを漏れなく走査できる。
+        boolean priming = primingScans > 0;
+        if (priming) primingScans--;
+
         Inventory inv = mc.player.getInventory();
         for (int i = 0; i < inv.getContainerSize(); i++) {
             ItemStack stack = inv.getItem(i);
@@ -80,9 +96,16 @@ public final class CompassScanner {
 
             // C2M は最初の1本で打ち切るが、本作は2本同時 FOUND を取りこぼさないため
             // break せずに全スロットを見続ける。
-            if (EC_LOADED) ECInner.tryHandle(stack, level, dimension);
-            if (NC_LOADED) NCInner.tryHandle(stack, level, dimension);
+            if (EC_LOADED) ECInner.tryHandle(stack, level, dimension, priming);
+            if (NC_LOADED) NCInner.tryHandle(stack, level, dimension, priming);
         }
+    }
+
+    @SubscribeEvent
+    public static void onLoggingIn(ClientPlayerNetworkEvent.LoggingIn event) {
+        SeenKeys.clear();
+        FtbWaypointSink.clearPending();
+        primingScans = PRIMING_SCANS;
     }
 
     @SubscribeEvent
@@ -96,7 +119,7 @@ public final class CompassScanner {
      * config が off の kind は SeenKeys にも記録しない（後で config を on にした時に効くように）。
      */
     private static void handleFound(Discovery.Kind kind, String id, Integer x, Integer z,
-                                     ResourceKey<Level> dimension, Level level) {
+                                     ResourceKey<Level> dimension, Level level, boolean priming) {
         if (id == null || x == null || z == null) return;
 
         boolean enabled = kind == Discovery.Kind.STRUCTURE ? Config.STRUCTURES.get() : Config.BIOMES.get();
@@ -104,6 +127,9 @@ public final class CompassScanner {
 
         Discovery d = new Discovery(kind, id, x, z, dimension);
         if (!SeenKeys.add(d.key())) return;
+
+        // ログイン時点で既に FOUND だったものは前のセッションの結果。記録だけして登録しない。
+        if (priming) return;
 
         int y = YEstimator.estimate(level, x, z, id, kind == Discovery.Kind.BIOME);
         FtbWaypointSink.offer(d, y);
@@ -117,7 +143,7 @@ public final class CompassScanner {
     private static final class ECInner {
         private static volatile boolean available = true;
 
-        static void tryHandle(ItemStack stack, Level level, ResourceKey<Level> dimension) {
+        static void tryHandle(ItemStack stack, Level level, ResourceKey<Level> dimension, boolean priming) {
             if (!available) return;
 
             String structureId;
@@ -141,7 +167,7 @@ public final class CompassScanner {
                         t.toString());
                 return;
             }
-            handleFound(Discovery.Kind.STRUCTURE, structureId, x, z, dimension, level);
+            handleFound(Discovery.Kind.STRUCTURE, structureId, x, z, dimension, level, priming);
         }
     }
 
@@ -151,7 +177,7 @@ public final class CompassScanner {
     private static final class NCInner {
         private static volatile boolean available = true;
 
-        static void tryHandle(ItemStack stack, Level level, ResourceKey<Level> dimension) {
+        static void tryHandle(ItemStack stack, Level level, ResourceKey<Level> dimension, boolean priming) {
             if (!available) return;
 
             String biomeId;
@@ -175,7 +201,7 @@ public final class CompassScanner {
                         t.toString());
                 return;
             }
-            handleFound(Discovery.Kind.BIOME, biomeId, x, z, dimension, level);
+            handleFound(Discovery.Kind.BIOME, biomeId, x, z, dimension, level, priming);
         }
     }
 }
