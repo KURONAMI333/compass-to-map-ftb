@@ -1,5 +1,5 @@
 # Compass to Map: FTB Chunks — mods.toml
-# client 単独 MOD。ネットワーク登録も Mixin も持たない（SPEC §6 / §7 D1）。
+# client 単独 MOD。ネットワーク登録も Mixin も持たない。
 modLoader="javafml"
 loaderVersion="${loader_version_range}"
 
@@ -32,9 +32,7 @@ ${mod_description}
     side="BOTH"
 
 # FTB Chunks: waypoint 登録先。client API のみ使うのでサーバには不要。
-# 下限 2101.1.10 は javap で確認済み（addWaypointAt / getAllWaypoints /
-# Waypoint.setColor / Waypoint.getPos / Waypoint.getName / clientApi().getWaypointManager(dim)
-# ＝実際に呼んでいる API を全部）。
+# 下限 2101.1.10 は、実際に呼んでいる API がその版に揃っていることを確認して決めた。
 [[dependencies.${mod_id}]]
     modId="ftbchunks"
     type="required"
