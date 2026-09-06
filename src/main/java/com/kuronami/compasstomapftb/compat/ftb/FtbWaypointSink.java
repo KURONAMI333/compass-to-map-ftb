@@ -114,11 +114,19 @@ public final class FtbWaypointSink {
 
     private static void register(WaypointManager mgr, Discovery d, int y) {
         try {
-            boolean exists = mgr.getAllWaypoints().stream()
-                    .anyMatch(w -> w.getPos().getX() == d.x() && w.getPos().getZ() == d.z());
-            if (exists) return;
-
             String name = CompassNames.prettify(d.id());
+
+            // 既存の照合も種別で分ける（Discovery#key() と同じ理由）。
+            // BIOME は座標がぶれるので「この次元に同じ名前のピンが既にあるか」で見る。
+            // STRUCTURE は座標が決定的なので x/z で見る（別の村には別のピンが立つ）。
+            // Y はどちらでも見ない（チャンクのロード状況で変わるため）。
+            boolean exists = switch (d.kind()) {
+                case STRUCTURE -> mgr.getAllWaypoints().stream()
+                        .anyMatch(w -> w.getPos().getX() == d.x() && w.getPos().getZ() == d.z());
+                case BIOME -> mgr.getAllWaypoints().stream()
+                        .anyMatch(w -> name.equals(w.getName()));
+            };
+            if (exists) return;
             // addWaypointAt は「追加できたか」を返さない。内部で HashSet#add に渡した後、
             // 挿入の成否に関わらず新しく作った WaypointImpl をそのまま返す
             // (WaypointManagerImpl:155-159)。だから非 null は登録された証拠にならず、
