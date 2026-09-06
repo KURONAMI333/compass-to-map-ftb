@@ -99,6 +99,14 @@ dependencies {
     if (!project.hasProperty('noEC')) localRuntime "maven.modrinth:explorers-compass:${ec_version}"
     if (!project.hasProperty('noNC')) localRuntime "maven.modrinth:natures-compass:${nc_version}"
 
+    // JourneyMap と C2M(mod-003) を同居させた構成で落ちないことの確認用（受入 A9）。
+    //   ./gradlew runClientMp -PwithJM
+    // 本 MOD は JourneyMap を一切参照しない（出荷 jar にも参照は無い）。両方が別々に登録する。
+    if (project.hasProperty('withJM')) {
+        localRuntime "maven.modrinth:journeymap:${jm_version}"
+        localRuntime files("${rootDir}/../mod-003-compass-to-map/build/libs/compasstomap-2.0.3.jar")
+    }
+
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

@@ -57,9 +57,27 @@ public final class CompassScanner {
      * 正規の構成（SPEC F3）でも NoClassDefFoundError の warn が log に出てしまう。
      * C2M（mod-003）の {@code CompassWatcher:74,86} と同じく先に {@link ModList} で弾く。
      * Inner class の catch は残す（導入されているが API が変わった場合の受け皿）。
+     *
+     * <p><b>static final で持たない。</b> {@code @EventBusSubscriber} のクラスがいつロードされるかは
+     * 同居する MOD の顔ぶれで変わり、{@link ModList} が揃う前にロードされると false のまま固まる。
+     * 実際に JourneyMap と C2M を同居させた構成で検出が丸ごと止まった（2026-09-06 実測・受入 A9）。
+     * 最初の走査（＝ワールドに入った後）で1回だけ解決する。
      */
-    private static final boolean EC_LOADED = ModList.get().isLoaded("explorerscompass");
-    private static final boolean NC_LOADED = ModList.get().isLoaded("naturescompass");
+    private static Boolean ecLoaded;
+    private static Boolean ncLoaded;
+
+    private static boolean compassModsResolved() {
+        if (ecLoaded != null) return true;
+        try {
+            ecLoaded = ModList.get().isLoaded("explorerscompass");
+            ncLoaded = ModList.get().isLoaded("naturescompass");
+        } catch (Throwable t) {
+            return false; // ModList がまだ使えない。次の走査で試す
+        }
+        CompassToMapFtb.LOGGER.info("Compass detection ready: Explorer's Compass={} / Nature's Compass={}",
+                ecLoaded, ncLoaded);
+        return true;
+    }
 
     private CompassScanner() {}
 
@@ -86,6 +104,8 @@ public final class CompassScanner {
         // （1.21.1 の net.minecraft.world.entity.player.Inventory を javap で実測確認済み）。
         // C2M（mod-003）のように offhand だけ別扱いで読む必要はなく、この1ループで
         // メインインベントリ・防具・オフハンドの全スロットを漏れなく走査できる。
+        if (!compassModsResolved()) return;
+
         boolean priming = primingScans > 0;
         if (priming) primingScans--;
 
@@ -96,8 +116,8 @@ public final class CompassScanner {
 
             // C2M は最初の1本で打ち切るが、本作は2本同時 FOUND を取りこぼさないため
             // break せずに全スロットを見続ける。
-            if (EC_LOADED) ECInner.tryHandle(stack, level, dimension, priming);
-            if (NC_LOADED) NCInner.tryHandle(stack, level, dimension, priming);
+            if (ecLoaded) ECInner.tryHandle(stack, level, dimension, priming);
+            if (ncLoaded) NCInner.tryHandle(stack, level, dimension, priming);
         }
     }
 
