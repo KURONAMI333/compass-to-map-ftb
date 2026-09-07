@@ -66,4 +66,4 @@ CurseForge のコメント欄か、X の [@kuronami333](https://x.com/kuronami33
 
 ## ライセンス
 
-All Rights Reserved. modpack への収録は許諾もクレジットも不要。
+All Rights Reserved. どの modpack にも、どのプラットフォームでも、収益化していても収録してよい（許諾もクレジットも不要）。ソースは公開しているので、何をしているかは読んで確かめられる。

@@ -26,4 +26,4 @@ Using a different map? Sister mods: **Compass to Map** for JourneyMap, **Compass
 
 Bugs and questions: comment on the CurseForge page, or DM @kuronami333 on X.
 
-All Rights Reserved. Modpack inclusion is allowed without permission or credit. Source: https://github.com/KURONAMI333/compass-to-map-ftb
+All Rights Reserved. Free to put in any modpack, on any platform, monetised or not - no permission needed, no credit required. Source is published so you can read exactly what it does: https://github.com/KURONAMI333/compass-to-map-ftb
