@@ -1,69 +1,34 @@
-# Compass to Map: FTB Chunks & Explorer's Compass & Nature's Compass Addon
+# Compass to Map: FTB Chunks
 
-> Explorer's Compass / Nature's Compass で構造物・バイオームを見つけた瞬間に、FTB Chunks の地図へ**色分けされた waypoint** を自動登録する。プロンプト無し、UI 介入ゼロ。**クライアント側だけで完結する。**
+Every structure and biome you find with Explorer's Compass or Nature's Compass lands on your FTB Chunks map as a colour-coded waypoint, the instant the search succeeds.
 
-[![License: All Rights Reserved](https://img.shields.io/badge/License-All%20Rights%20Reserved-lightgrey.svg)](LICENSE)
-[![CurseForge](https://img.shields.io/badge/CurseForge-compass--to--map--ftb-F16436)](https://www.curseforge.com/minecraft/mc-mods/compass-to-map-ftb)
+The compasses give you coordinates; FTB Chunks stores waypoints. Nothing carries one to the other, so you end up reading numbers off the compass HUD and typing them into the waypoint screen. This addon closes that gap and does nothing else.
 
----
+**Features**
 
-## Supported Loaders / Versions
+- Waypoints structures (Explorer's Compass) and biomes (Nature's Compass). Either mod on its own is enough — the other half simply stays quiet
+- Coloured by category, so a full map still reads at a glance: villages gold, strongholds purple, temples and monuments cyan, nether fortresses orange, ancient cities aqua. Biomes follow their own terrain palette
+- Named from the target, not a generic label — `minecraft:village_plains` becomes **Village Plains**
+- Once placed, it is an ordinary FTB Chunks waypoint. Rename it, recolour it, hide it, delete it. This addon never touches a waypoint it has already placed
+- Sensible about repeats. Searching the same biome again will not scatter near-duplicates, and finding a *different* village still gets its own pin
+- **Client-side only.** The server does not need this mod. Tested against a dedicated server running only FTB Chunks and the compasses
 
-| Minecraft | NeoForge | Forge | Fabric |
-|---|:---:|:---:|:---:|
-| 1.21.1 | ✅ | — | — |
+**Config** (`config/compasstomapftb-client.toml`, or the Mods screen) — three switches, and the defaults are the product: `structures`, `biomes`, `chatNotification`.
 
----
+**Dependencies**
 
-## なにをするやつ?
+- [FTB Chunks](https://www.curseforge.com/minecraft/mc-mods/ftb-chunks-forge) — required. It is the map the waypoints go to, so install it the way you normally would (on the server too, if you play on one)
+- At least one of [Explorer's Compass](https://www.curseforge.com/minecraft/mc-mods/explorers-compass) or [Nature's Compass](https://www.curseforge.com/minecraft/mc-mods/natures-compass)
+- JourneyMap or Xaero's can be installed alongside; this addon only ever writes to FTB Chunks
 
-コンパスは座標を教えてくれる。FTB Chunks は waypoint を持っている。その間をつなぐものが無いので、
-コンパスの HUD に出た数字を読んで waypoint 画面に手で打ち込むことになる。このアドオンはそこだけを埋める。
+Using a different map? Sister mods: **Compass to Map** for JourneyMap, **Compass to Map: Xaero's** for Xaero's Minimap.
 
-- 🧭 **Explorer's Compass（構造物）と Nature's Compass（バイオーム）の両対応** — 片方だけでも動く
-- 🎨 **カテゴリ別の色** — 村は金、要塞は紫、寺院と海底神殿はシアン、ネザー要塞は橙、古代都市は水色。バイオームは地形ごとの配色
-- 🏷️ **対象名から命名** — `minecraft:village_plains` → `Village Plains`
-- ✋ **立てた後は普通の FTB Chunks の waypoint** — 名前も色も自由に変えられ、こちらは二度と触らない
-- 🔁 **重複に強い** — 同じバイオームを再検索してもピンは増えず、別の村を見つければ別のピンが立つ
-- 📡 **クライアント側だけで完結** — サーバーにこの MOD を入れる必要は無い
+All Rights Reserved. Free to put in any modpack, on any platform, monetised or not - no permission needed, no credit required. Source is published so you can read exactly what it does: https://github.com/KURONAMI333/compass-to-map-ftb
 
-## 設定
+## Downloads and support
 
-`config/compasstomapftb-client.toml`（または Mods 画面）。3項目だけで、既定のまま使う想定。
+Downloads: [CurseForge](https://www.curseforge.com/minecraft/mc-mods/compass-to-map-ftb) · [GitHub Releases](https://github.com/KURONAMI333/compass-to-map-ftb/releases/tag/v1.0.0).
 
-| キー | 既定 | 意味 |
-|---|---|---|
-| `structures` | `true` | Explorer's Compass の発見を登録する |
-| `biomes` | `true` | Nature's Compass の発見を登録する |
-| `chatNotification` | `true` | 登録時にチャットへ1行出す |
+For bugs and questions, comment on the [CurseForge page](https://www.curseforge.com/minecraft/mc-mods/compass-to-map-ftb) or DM [@kuronami333 on X](https://x.com/kuronami333).
 
-## 依存
-
-- **FTB Chunks**（必須） — waypoint の登録先。普段どおりに導入する（サーバーで遊ぶならサーバーにも）
-- **Explorer's Compass** / **Nature's Compass**（どちらか一方以上） — 検索の実体
-- JourneyMap や Xaero's が同居していても構わない。このアドオンは FTB Chunks にしか書かない
-
-## 姉妹 MOD
-
-| 地図 | MOD |
-|---|---|
-| JourneyMap | Compass to Map |
-| Xaero's Minimap | Compass to Map: Xaero's |
-| FTB Chunks | このリポジトリ |
-
-## ビルド
-
-```bash
-export JAVA_HOME="<JDK 21 のパス>"
-./gradlew build
-```
-
-出力は `build/libs/compasstomapftb-<version>.jar`。
-
-## 不具合・質問
-
-CurseForge のコメント欄か、X の [@kuronami333](https://x.com/kuronami333) の DM へ。
-
-## ライセンス
-
-All Rights Reserved. どの modpack にも、どのプラットフォームでも、収益化していても収録してよい（許諾もクレジットも不要）。ソースは公開しているので、何をしているかは読んで確かめられる。
+[Source](https://github.com/KURONAMI333/compass-to-map-ftb) · [License](LICENSE)
