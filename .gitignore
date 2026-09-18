@@ -39,8 +39,4 @@ run/
 repo/
 !**/src/**/repo/
 
-### 統括↔executor の作業文書（公開 repo に入れない）
-GAP_LOG.md
 RELEASE_HANDOFF.md
-_handoff/
-runclient-hosts.gradle
